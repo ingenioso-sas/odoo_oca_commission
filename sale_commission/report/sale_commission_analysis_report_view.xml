@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <odoo>
+    <!--PIVOT view-->
     <record id="view_sale_commission_analysis_pivot" model="ir.ui.view">
         <field name="name">sale.commission.analysis.pivot</field>
         <field name="model">sale.commission.analysis.report</field>
@@ -11,16 +12,31 @@
             </pivot>
         </field>
     </record>
+    <!--GRAPH view-->
     <record id="view_sale_commission_analysis_graph" model="ir.ui.view">
         <field name="name">sale.commission.analysis.graph</field>
         <field name="model">sale.commission.analysis.report</field>
         <field name="arch" type="xml">
             <graph string="Sale Commission Analysis">
-                <field name="agent_id" />
+                <field name="agent_id" type='row' />
+                <field name="date_invoice" interval="day" type="col"/>
                 <field name="amount" type="measure" />
             </graph>
         </field>
     </record>
+    <!--TREE view-->
+    <record id="view_sale_commission_analysis_tree" model="ir.ui.view">
+        <field name="name">sale.commission.analysis.tree</field>
+        <field name="model">sale.commission.analysis.report</field>
+        <field name="arch" type="xml">
+            <tree string="Sale Commission Analysis">
+                <field name="agent_id" />
+                <field name="partner_id" />
+                <field name="product_id" />
+            </tree>
+        </field>
+    </record>
+    <!--SEARCH view-->
     <record id="view_sale_commission_analysis_search" model="ir.ui.view">
         <field name="name">sale.commission.analysis.search</field>
         <field name="model">sale.commission.analysis.report</field>
@@ -103,17 +119,21 @@
     <record id="action_sale_commission_analysis_report" model="ir.actions.act_window">
         <field name="name">Commission Analysis</field>
         <field name="res_model">sale.commission.analysis.report</field>
-        <field name="binding_view_types">form,pivot,graph</field>
+        <field name="binding_view_types">tree,pivot,graph,form</field>
         <field name="search_view_id" ref="view_sale_commission_analysis_search" />
-        <field name="view_id" ref="view_sale_commission_analysis_graph" />
+        <field name="view_mode">tree,pivot,graph,form</field>
+        <field name="view_id" ref="view_sale_commission_analysis_graph" /> 
+        <field name="context">{'group_by':['agent_id'], 'expand':"1"}</field>
         <field
             name="help"
         >This report performs analysis on your commissions added in invoice lines. You can check the amount and lines that will be settled by date, product, product category, aget, etc. Use this report to perform analysis on invoice lines agents not beeing settled yet.</field>
     </record>
     <menuitem
+        name="Carambas" 
         action="action_sale_commission_analysis_report"
         id="menu_sale_commissions_analysis"
         parent="account.account_reports_management_menu"
         sequence="15"
     />
+
 </odoo>
