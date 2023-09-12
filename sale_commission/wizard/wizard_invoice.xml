@@ -35,7 +35,7 @@
             </form>
         </field>
     </record>
-    <act_window
+    <!-- <act_window
         id="action_commission_make_invoices"
         name="Create commission invoices"
         res_model="sale.commission.make.invoice"
@@ -47,5 +47,5 @@
         parent="menu_sale_commissions_management"
         sequence="30"
         action="action_commission_make_invoices"
-    />
+    /> -->
 </odoo>

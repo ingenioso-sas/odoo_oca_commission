@@ -37,7 +37,7 @@
             </form>
         </field>
     </record>
-    <act_window
+    <!-- <act_window
         id="action_agents_settlement"
         name="Settle commissions"
         res_model="sale.commission.make.settle"
@@ -48,5 +48,5 @@
         id="menu_agents_settlement"
         parent="menu_sale_commissions_management"
         action="action_agents_settlement"
-    />
+    /> -->
 </odoo>
