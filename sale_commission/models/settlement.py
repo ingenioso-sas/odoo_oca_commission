@@ -80,7 +80,7 @@ class Settlement(models.Model):
         if any(x.state == "invoiced" for x in self):
             raise exceptions.Warning(_("You can't delete invoiced settlements."))
         return super().unlink()
-
+    #facturar
     def action_invoice(self):
         return {
             "type": "ir.actions.act_window",

@@ -39,7 +39,7 @@
                             <field
                                 name="commission_id"
                                 attrs="{'required': [('agent', '=', True)]}"
-                            />
+                            />                                                       
                         </group>
                         <group>
                             <field
