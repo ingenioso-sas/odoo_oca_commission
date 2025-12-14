@@ -8,15 +8,21 @@ from odoo import _, api, exceptions, fields, models
 class ResPartner(models.Model):
     _inherit = "res.partner"
 
-    agent_type = fields.Selection(selection_add=[("salesman", "Salesman (employee)")],)
+    agent_type = fields.Selection(
+        selection_add=[("salesman", "Salesman (employee)")]
+    )
+
     employee_id = fields.Many2one(
         string="Empleado Relacionado",
-        comodel_name="hr.employee",
-        #domain = "[('id', 'in', self.agent_id.employee_id)]"             
-    ) 
-    
-    employee = fields.Boolean(compute="_compute_employee", store=True, readonly=False)
+        comodel_name="hr.employee"
+    )
 
+    employee = fields.Boolean(
+        string="Empleado",
+        compute="_compute_employee",
+        store=True,
+        readonly=False
+    )
 
     @api.depends("agent_type", "employee_id")
     def _compute_employee(self):
@@ -46,6 +52,3 @@ class ResPartner(models.Model):
     def _onchange_agent_type_hr_commission(self):    
         if self.agent_type == "salesman":
             self.employee = True
-
-            
-
