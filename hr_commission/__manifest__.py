@@ -4,7 +4,7 @@
 
 {
     "name": "HR commissions",
-    "version": "13.0.1.0.0",
+    "version": "13.0.1.1.0",
     "author": "Tecnativa," "Odoo Community Association (OCA)",
     "website": "https://github.com/OCA/commission",
     "category": "Commissions",
@@ -13,6 +13,7 @@
     "data": [
         "views/res_partner_view.xml",
         "views/sale_commission_settlement_views.xml",
+        "views/hr_employee_views.xml",
     ],
     "installable": True,
 }

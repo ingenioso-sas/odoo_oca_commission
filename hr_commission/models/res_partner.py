@@ -9,20 +9,26 @@ class ResPartner(models.Model):
     _inherit = "res.partner"
 
     agent_type = fields.Selection(
-        selection_add=[("salesman", "Salesman (employee)")]
+        selection_add=[("salesman", "Salesman (employee)")],
+        default="salesman"
     )
 
     employee_id = fields.Many2one(
-        string="Empleado Relacionado",
-        comodel_name="hr.employee"
+        string="Related Employee",
+        comodel_name="hr.employee",
+        ondelete="set null",
     )
 
     employee = fields.Boolean(
-        string="Empleado",
+        string="Employee",
         compute="_compute_employee",
         store=True,
-        readonly=False
     )
+
+    @api.onchange("employee_id")
+    def _onchange_employee_id(self):
+        if self.employee_id.user_id:
+            self.user_id = self.employee_id.user_id
 
     @api.depends("agent_type", "employee_id")
     def _compute_employee(self):
@@ -32,10 +38,7 @@ class ResPartner(models.Model):
         if hasattr(super(), "_compute_employee"):
             super()._compute_employee()
         for record in self:
-            if record.employee_id and record.agent_type == "salesman":
-                record.employee = True
-            else:
-                record.employee = False
+            record.employee = bool(record.employee_id and record.agent_type == "salesman")
 
     @api.constrains("agent_type")
     def _check_employee(self):

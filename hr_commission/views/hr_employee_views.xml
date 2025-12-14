@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="hr_employee_view_form" model="ir.ui.view">
+        <field name="name">hr.employee.view.form.inherit.hr.commission</field>
+        <field name="model">hr.employee</field>
+        <field name="inherit_id" ref="hr.view_employee_form"/>
+        <field name="arch" type="xml">
+            <div name="button_box" position="inside">
+                <button name="action_view_agents" type="object" class="oe_stat_button" icon="fa-users" attrs="{'invisible': [('agents_count', '=', 0)]}">
+                    <field name="agents_count" widget="statinfo" string="Agents"/>
+                </button>
+            </div>
+            <header position="inside">
+                    <button name="create_agent" attrs="{'invisible': [('agents_count', '>', 0)]}" type="object" string="Create Agent" class="oe_highlight"/>
+            </header>
+        </field>
+    </record>
+
+</odoo>
