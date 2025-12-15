@@ -1,7 +1,7 @@
 # Copyright 2018 Tecnativa - Pedro M. Baeza
 # License AGPL-3 - See https://www.gnu.org/licenses/agpl-3.0.html
 
-from odoo import _, exceptions, models, fields
+from odoo import _, api, exceptions, fields, models
 
 
 class HrEmployee(models.Model):
@@ -17,6 +17,7 @@ class HrEmployee(models.Model):
         string="Agents",
     )
 
+    @api.depends("agent_ids")
     def _compute_agents_count(self):
         for record in self:
             record.agents_count = len(record.agent_ids)
