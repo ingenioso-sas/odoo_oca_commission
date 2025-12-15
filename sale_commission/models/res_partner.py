@@ -24,8 +24,11 @@ class ResPartner(models.Model):
         string="Creditor/Agent",
         help="Check this field if the partner is a creditor or an agent.",
     )
+
     agent_type = fields.Selection(
-        selection=[("agent", "External agent")], string="Type", default="agent"
+        selection=[("agent", "External agent"), ("not_agent", "Not agent")],
+        string="Type",
+        default="agent",
     )
     commission_id = fields.Many2one(
         string="Commission",

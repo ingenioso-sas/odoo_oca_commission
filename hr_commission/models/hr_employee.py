@@ -8,14 +8,9 @@ class HrEmployee(models.Model):
     _inherit = "hr.employee"
 
     agent_ids = fields.One2many(
-        comodel_name="res.partner",
-        inverse_name="employee_id",
-        string="Related agent",
+        comodel_name="res.partner", inverse_name="employee_id", string="Related agent",
     )
-    agents_count = fields.Integer(
-        compute="_compute_agents_count",
-        string="Agents",
-    )
+    agents_count = fields.Integer(compute="_compute_agents_count", string="Agents",)
 
     @api.depends("agent_ids")
     def _compute_agents_count(self):
@@ -26,21 +21,21 @@ class HrEmployee(models.Model):
         commission_model = self.env["sale.commission"]
         commission = commission_model.search([], limit=1)
         if not commission:
-            commission = commission_model.create({
-                "name": "Default",
-            })
+            commission = commission_model.create({"name": "Default",})
         return commission
 
     def create_agent(self):
         self.ensure_one()
         commission = self._get_or_create_commission()
-        agent = self.env["res.partner"].create({
-            "name": self.name,
-            "employee_id": self.id,
-            "agent_type": "salesman",
-            "commission_id": commission.id,
-            "agent": True,
-        })
+        agent = self.env["res.partner"].create(
+            {
+                "name": self.name,
+                "employee_id": self.id,
+                "agent_type": "salesman",
+                "commission_id": commission.id,
+                "agent": True,
+            }
+        )
         return {
             "name": _("Agent"),
             "type": "ir.actions.act_window",

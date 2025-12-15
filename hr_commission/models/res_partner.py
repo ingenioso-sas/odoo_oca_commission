@@ -8,20 +8,14 @@ from odoo import _, api, exceptions, fields, models
 class ResPartner(models.Model):
     _inherit = "res.partner"
 
-    agent_type = fields.Selection(
-        selection_add=[("salesman", "Salesman (employee)")]
-    )
+    agent_type = fields.Selection(selection_add=[("salesman", "Salesman (employee)")])
 
     employee_id = fields.Many2one(
-        string="Related Employee",
-        comodel_name="hr.employee",
-        ondelete="set null",
+        string="Related Employee", comodel_name="hr.employee", ondelete="set null",
     )
 
     employee = fields.Boolean(
-        string="Employee",
-        compute="_compute_employee",
-        store=True,
+        string="Employee", compute="_compute_employee", store=True,
     )
 
     @api.onchange("employee_id")
@@ -37,7 +31,9 @@ class ResPartner(models.Model):
         if hasattr(super(), "_compute_employee"):
             super()._compute_employee()
         for record in self:
-            record.employee = bool(record.employee_id and record.agent_type == "salesman")
+            record.employee = bool(
+                record.employee_id and record.agent_type == "salesman"
+            )
 
     @api.constrains("agent_type")
     def _check_employee(self):
@@ -53,7 +49,7 @@ class ResPartner(models.Model):
                 )
             )
 
-    @api.onchange('agent_type')
-    def _onchange_agent_type_hr_commission(self):    
+    @api.onchange("agent_type")
+    def _onchange_agent_type_hr_commission(self):
         if self.agent_type == "salesman":
             self.employee = True

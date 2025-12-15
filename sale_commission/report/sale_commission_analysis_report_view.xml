@@ -19,7 +19,7 @@
         <field name="arch" type="xml">
             <graph string="Sale Commission Analysis">
                 <field name="agent_id" type='row' />
-                <field name="date_invoice" interval="day" type="col"/>
+                <field name="date_invoice" interval="day" type="col" />
                 <field name="amount" type="measure" />
             </graph>
         </field>
@@ -122,14 +122,14 @@
         <field name="binding_view_types">tree,pivot,graph,form</field>
         <field name="search_view_id" ref="view_sale_commission_analysis_search" />
         <field name="view_mode">tree,pivot,graph,form</field>
-        <field name="view_id" ref="view_sale_commission_analysis_graph" /> 
+        <field name="view_id" ref="view_sale_commission_analysis_graph" />
         <field name="context">{'group_by':['agent_id'], 'expand':"1"}</field>
         <field
             name="help"
         >This report performs analysis on your commissions added in invoice lines. You can check the amount and lines that will be settled by date, product, product category, aget, etc. Use this report to perform analysis on invoice lines agents not beeing settled yet.</field>
     </record>
     <menuitem
-        name="Carambas" 
+        name="Carambas"
         action="action_sale_commission_analysis_report"
         id="menu_sale_commissions_analysis"
         parent="account.account_reports_management_menu"
