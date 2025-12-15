@@ -9,8 +9,7 @@ class ResPartner(models.Model):
     _inherit = "res.partner"
 
     agent_type = fields.Selection(
-        selection_add=[("salesman", "Salesman (employee)")],
-        default="salesman"
+        selection_add=[("salesman", "Salesman (employee)")]
     )
 
     employee_id = fields.Many2one(
@@ -42,7 +41,10 @@ class ResPartner(models.Model):
 
     @api.constrains("agent_type")
     def _check_employee(self):
-        if self.agent_type == "salesman" and not self.employee_id:
+        """
+        Check if there's an employee linked to that partner, only if it's a salesman.
+        """
+        if self.agent and self.agent_type == "salesman" and not self.employee_id:
             raise exceptions.ValidationError(
                 _(
                     "There must one (and only one) employee linked to this "
