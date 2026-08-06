@@ -71,11 +71,14 @@
                 <field name="commission_status" invisible="1" />
                 <field name="settlement_id" invisible="1" />
             </xpath>
-            <field name="amount_total" position="after">
+            <field name="amount_residual" position="after">
                 <field
                     name="commission_total"
+                    string="Sales commission (not included in total)"
                     widget="monetary"
                     options="{'currency_field': 'currency_id'}"
+                    class="text-muted"
+                    attrs="{'invisible': [('commission_total', '=', 0)]}"
                 />
             </field>
         </field>

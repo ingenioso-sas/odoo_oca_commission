@@ -22,8 +22,9 @@
             <field name="amount_total" position="after">
                 <field
                     name="commission_total"
-                    widget="monetary"
-                    options="{'currency_field': 'currency_id'}"
+                    string="Salesperson commission (not included in total)"
+                    class="text-muted"
+                    attrs="{'invisible': [('commission_total', '=', 0)]}"
                 />
             </field>
             <xpath expr="//field[@name='note']" position="after">
