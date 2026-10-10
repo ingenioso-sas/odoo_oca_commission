@@ -35,6 +35,8 @@ class SaleCommissionMakeSettle(models.TransientModel):
                 return date(month=1, year=date_to.year, day=1)
         elif agent.settlement == "annual":
             return date(month=1, year=date_to.year, day=1)
+        # Fallback for unexpected/empty settlement values: monthly period.
+        return date(month=date_to.month, year=date_to.year, day=1)
 
     def _get_next_period_date(self, agent, current_date):
         if agent.settlement == "monthly":
@@ -52,6 +54,8 @@ class SaleCommissionMakeSettle(models.TransientModel):
             return current_date + relativedelta(months=6)
         elif agent.settlement == "annual":
             return current_date + relativedelta(years=1)
+        # Fallback for unexpected/empty settlement values: monthly period.
+        return current_date + relativedelta(months=1)
 
     def _get_settlement(self, agent, company, sett_from, sett_to):
         return self.env["sale.commission.settlement"].search(

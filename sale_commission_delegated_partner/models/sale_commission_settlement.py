@@ -30,7 +30,11 @@ class SaleCommissionSettlement(models.Model):
             return agent.delegated_agent_id
         return super(SaleCommissionSettlement, self)._get_invoice_partner()
 
-    def _post_process_line(self, line_form):
+    def _post_process_line(self, line_vals):
         if self.agent_id.delegated_agent_id:
-            line_form.name += "\n" + _("Agent: %s") % self.agent_id.display_name
-        super()._post_process_line(line_form)
+            suffix = "\n" + _("Agent: %s") % self.agent_id.display_name
+            if isinstance(line_vals, dict):
+                line_vals["name"] = (line_vals.get("name") or "") + suffix
+            else:  # backward compatibility with Form-based lines
+                line_vals.name += suffix
+        super()._post_process_line(line_vals)

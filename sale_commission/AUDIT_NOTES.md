@@ -72,6 +72,61 @@ muchos usuarios (revisión manual pendiente).
     y oculto si es 0.
   - `views/sale_order_view.xml` (orden de venta): misma corrección de etiqueta/estilo después
     de `amount_total`.
-- [ ] Refactor `_prepare_invoice` para no usar `Form()` (hallazgo 2)
-- [ ] Eliminar dead code (hallazgo 4)
-- [ ] Evaluar `_compute_agent_ids` para no resetear agentes manuales (hallazgo 5)
+- [x] Refactor `_prepare_invoice` para no usar `Form()` (hallazgo 2) — **2026-10-09 (v13.0.1.9.0)**
+- [x] Eliminar dead code (hallazgo 4) — **2026-10-09 (v13.0.1.9.0)**
+- [x] Evaluar `_compute_agent_ids` para no resetear agentes manuales (hallazgo 5) — **2026-10-09 (v13.0.1.9.0)**
+
+## Correcciones aplicadas 2026-10-09 — versión 13.0.1.9.0
+
+Verificado en `odoo13_prueba2` (módulo `installed`, `latest_version=13.0.1.9.0`,
+smoke 19/19 OK: SO→factura, post, settle, make_invoices, menús).
+
+1. `models/settlement.py`: eliminado `from odoo.tests.common import Form`.
+   `_prepare_invoice` construye el `dict` directamente
+   (`_prepare_invoice_line_vals`: cuenta de gasto del producto/categoría,
+   impuestos proveedor, `settlement_id`, período con formato de idioma).
+   `_post_process_line(line_vals)` ahora recibe `dict`
+   (compatible con `Form` en el override).
+   `exceptions.Warning` → `UserError`; eliminado `"view_type"` del action.
+2. `sale_commission_delegated_partner`: `_post_process_line` adaptado a `dict`
+   (con fallback a `Form`).
+3. `models/account_move.py` / `sale_order.py`: `commission_total`
+   `string="Sales commission"` en el modelo; vista de pedido unificada a
+   `"Sales commission (not included in total)"` (antes decía "Salesperson...").
+   Grupo de líneas renombrado a "Sales commissions".
+4. `models/account_move.py::fields_view_get`: `etree.tostring(..., encoding="unicode")`
+   (antes devolvía `bytes`) e inyección de `partner_id` idempotente.
+5. `_compute_agent_ids` (factura y pedido): por registro, preserva agentes
+   manuales; `recompute_agents()` limpia y regenera a pedido explícito.
+6. `models/sale_order.py`: restaurado `_prepare_invoice_line` (propaga
+   `agent_ids` del pedido a la factura; el compute de factura los respeta).
+7. `models/account_move.py`: `_check_settle_integrity` (constrains que
+   disparaba en recomputes) reemplazado por override de `write()` que solo
+   bloquea modificaciones reales de `agent_id`/`amount` en líneas liquidadas
+   (comparación pre-escritura con `float_compare`). Protege igual en producción
+   y no genera falsos positivos en recomputes/lecturas.
+8. `security/ir.model.access.csv`: corregido `id` duplicado
+   (`access_sale_order_line_agent` ×2 → `..._user` el segundo); endurecidos
+   permisos (tipos de comisión y report solo lectura para salesman/user;
+   settlements sin `unlink` para salesman/user; report SQL `1,0,0,0`).
+9. `security/sale_commission_security.xml`: añadida regla multi-company para
+   `sale.commission.settlement.line` (+ `company_id` con `store=True` en el modelo).
+10. `views/sale_commission_view.xml`: menú movido de `hr.menu_hr_root`
+    (sin dependencia de `hr`) a `sale.sale_menu_root` con
+    `sales_team.group_sale_manager`.
+11. `views/res_partner_view.xml`: `colors=` obsoleto → `decoration-danger/muted`.
+12. `report/sale_commission_analysis_report_view.xml`: menú `"Carambas"` →
+    `"Commission Analysis"` (coincide con `es.po`); filtros `settled` duplicados →
+    `settled`/`not_settled`; typos del help (`aget`, `beeing`).
+13. `wizard/wizard_settle.py`: fallback mensual si `settlement` inesperado/vacío.
+14. `models/res_partner.py`: documentado `"quaterly"` (typo conservado por
+    compatibilidad con datos existentes).
+15. `models/sale_commission_mixin.py`: eliminado `"view_type"` obsoleto en
+    `button_edit_agents`.
+
+Notas:
+- `commission_free` existe en `product.product` (related auto a template,
+  verificado en BD); no se duplicó el campo.
+- `product_id` del mixin coincide en tipo con el de las líneas; sin cambios.
+- Tests OCA de `sale_commission` no corren en `odoo13_prueba2` (sin datos demo:
+  falta `base.res_partner_2` — preexistente, no regresión); `hr_commission`: 9/9 OK.

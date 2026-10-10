@@ -55,7 +55,7 @@
                 />
                 <filter
                     string="Not Settled"
-                    name="settled"
+                    name="not_settled"
                     domain="[('settled','=',False)]"
                 />
                 <filter
@@ -126,10 +126,10 @@
         <field name="context">{'group_by':['agent_id'], 'expand':"1"}</field>
         <field
             name="help"
-        >This report performs analysis on your commissions added in invoice lines. You can check the amount and lines that will be settled by date, product, product category, aget, etc. Use this report to perform analysis on invoice lines agents not beeing settled yet.</field>
+        >This report performs analysis on your commissions added in invoice lines. You can check the amount and lines that will be settled by date, product, product category, agent, etc. Use this report to perform analysis on invoice lines agents not being settled yet.</field>
     </record>
     <menuitem
-        name="Carambas"
+        name="Commission Analysis"
         action="action_sale_commission_analysis_report"
         id="menu_sale_commissions_analysis"
         parent="account.account_reports_management_menu"

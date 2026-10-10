@@ -5,13 +5,16 @@
 from lxml import etree
 
 from odoo import _, api, exceptions, fields, models
+from odoo.tools import float_compare
 
 
 class AccountMove(models.Model):
     _inherit = "account.move"
 
     commission_total = fields.Float(
-        string="Commissions", compute="_compute_commission_total", store=True,
+        string="Sales commission",
+        compute="_compute_commission_total",
+        store=True,
     )
 
     @api.depends("line_ids.agent_ids.amount")
@@ -49,16 +52,16 @@ class AccountMove(models.Model):
         res = super(AccountMove, self).fields_view_get(
             view_id=view_id, view_type=view_type, toolbar=toolbar, submenu=submenu,
         )
-        if view_type == "form":
+        if view_type == "form" and res.get("arch"):
             invoice_xml = etree.XML(res["arch"])
             invoice_line_fields = invoice_xml.xpath("//field[@name='invoice_line_ids']")
             if invoice_line_fields:
                 invoice_line_field = invoice_line_fields[0]
-                context = invoice_line_field.attrib.get("context", "{}").replace(
-                    "{", "{'partner_id': partner_id, ", 1,
-                )
-                invoice_line_field.attrib["context"] = context
-                res["arch"] = etree.tostring(invoice_xml)
+                context = invoice_line_field.attrib.get("context", "{}")
+                if "'partner_id'" not in context:
+                    context = context.replace("{", "{'partner_id': partner_id, ", 1)
+                    invoice_line_field.attrib["context"] = context
+                    res["arch"] = etree.tostring(invoice_xml, encoding="unicode")
         return res
 
 
@@ -84,14 +87,16 @@ class AccountMoveLine(models.Model):
 
     @api.depends("move_id.partner_id")
     def _compute_agent_ids(self):
-        self.agent_ids = False  # for resetting previous agents
-        for record in self.filtered(
-            lambda x: x.move_id.partner_id and x.move_id.type[:3] == "out"
-        ):
-            if not record.commission_free and record.product_id:
-                record.agent_ids = record._prepare_agents_vals_partner(
-                    record.move_id.partner_id
-                )
+        for record in self:
+            if record.move_id.partner_id and record.move_id.type[:3] == "out":
+                if not record.commission_free and record.product_id:
+                    if not record.agent_ids:
+                        record.agent_ids = record._prepare_agents_vals_partner(
+                            record.move_id.partner_id
+                        )
+                    continue
+            if not record.agent_ids:
+                record.agent_ids = False
 
     def _copy_data_extend_business_fields(self, values):
         """
@@ -163,11 +168,21 @@ class AccountInvoiceLineAgent(models.Model):
         for line in self:
             line.company_id = line.object_id.company_id
 
-    @api.constrains("agent_id", "amount")
-    def _check_settle_integrity(self):
-        for record in self:
-            if any(record.mapped("settled")):
-                raise exceptions.ValidationError(_("You can't modify a settled line"),)
+    def write(self, vals):
+        if "agent_id" in vals or "amount" in vals:
+            for record in self.filtered(lambda r: r.settled):
+                rounding = record.currency_id.rounding or 0.01
+                new_agent_id = vals.get("agent_id", record.agent_id.id)
+                new_amount = vals.get("amount", record.amount)
+                if new_agent_id != record.agent_id.id or float_compare(
+                    record.amount or 0.0,
+                    new_amount or 0.0,
+                    precision_rounding=rounding,
+                ):
+                    raise exceptions.ValidationError(
+                        _("You can't modify a settled line"),
+                    )
+        return super().write(vals)
 
     def _skip_settlement(self):
         """This function should return if the commission can be payed.

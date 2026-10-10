@@ -13,7 +13,9 @@ class SaleOrder(models.Model):
             record.commission_total = sum(record.mapped("order_line.agent_ids.amount"))
 
     commission_total = fields.Float(
-        string="Commissions", compute="_compute_commission_total", store=True,
+        string="Sales commission",
+        compute="_compute_commission_total",
+        store=True,
     )
 
     def recompute_lines_agents(self):
@@ -31,20 +33,22 @@ class SaleOrderLine(models.Model):
 
     @api.depends("order_id.partner_id")
     def _compute_agent_ids(self):
-        self.agent_ids = False  # for resetting previous agents
-        for record in self.filtered(lambda x: x.order_id.partner_id):
-            if not record.commission_free:
-                record.agent_ids = record._prepare_agents_vals_partner(
-                    record.order_id.partner_id
-                )
+        for record in self:
+            if record.order_id.partner_id and not record.commission_free:
+                if not record.agent_ids:
+                    record.agent_ids = record._prepare_agents_vals_partner(
+                        record.order_id.partner_id
+                    )
+            elif not record.agent_ids:
+                record.agent_ids = False
 
-    # def _prepare_invoice_line(self):
-    #     vals = super()._prepare_invoice_line()
-    #     vals["agent_ids"] = [
-    #         (0, 0, {"agent_id": x.agent_id.id, "commission_id": x.commission_id.id})
-    #         for x in self.agent_ids
-    #     ]
-    #     return vals
+    def _prepare_invoice_line(self):
+        vals = super()._prepare_invoice_line()
+        vals["agent_ids"] = [
+            (0, 0, {"agent_id": x.agent_id.id, "commission_id": x.commission_id.id})
+            for x in self.agent_ids
+        ]
+        return vals
 
 
 class SaleOrderLineAgent(models.Model):

@@ -41,6 +41,7 @@ class ResPartner(models.Model):
         selection=[
             ("biweekly", "Bi-weekly"),
             ("monthly", "Monthly"),
+            # NOTE: value kept as "quaterly" (typo) for DB compatibility.
             ("quaterly", "Quarterly"),
             ("semi", "Semi-annual"),
             ("annual", "Annual"),

@@ -58,6 +58,9 @@ class SaleCommissionMixin(models.AbstractModel):
                 )
 
     def recompute_agents(self):
+        # Explicit regeneration: clear current agents so the compute
+        # method (which preserves manually set agents) refills them.
+        self.agent_ids.unlink()
         self._compute_agent_ids()
 
     def button_edit_agents(self):
@@ -66,7 +69,6 @@ class SaleCommissionMixin(models.AbstractModel):
         return {
             "name": _("Agents"),
             "type": "ir.actions.act_window",
-            "view_type": "form",
             "view_mode": "form",
             "res_model": self._name,
             "views": [(view.id, "form")],

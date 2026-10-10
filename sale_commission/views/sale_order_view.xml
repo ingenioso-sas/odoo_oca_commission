@@ -22,7 +22,7 @@
             <field name="amount_total" position="after">
                 <field
                     name="commission_total"
-                    string="Salesperson commission (not included in total)"
+                    string="Sales commission (not included in total)"
                     class="text-muted"
                     attrs="{'invisible': [('commission_total', '=', 0)]}"
                 />

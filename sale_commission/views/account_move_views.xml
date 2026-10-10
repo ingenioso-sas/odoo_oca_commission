@@ -17,7 +17,7 @@
         <field name="arch" type="xml">
             <xpath expr="//field[@name='blocked']/.." position="after">
                 <group
-                    string="Commissions"
+                    string="Sales commissions"
                     name="group_commission"
                     attrs="{'invisible': [('agent_ids', '=', [])], 'readonly': [('any_settled', '=', True)]}"
                 >

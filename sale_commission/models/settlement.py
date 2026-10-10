@@ -6,7 +6,6 @@ from itertools import groupby
 
 from odoo import _, api, exceptions, fields, models
 from odoo.exceptions import UserError
-from odoo.tests.common import Form
 
 
 class Settlement(models.Model):
@@ -47,7 +46,7 @@ class Settlement(models.Model):
         string="Generated invoice",
         readonly=True,
     )
-    # TODO: To be removed
+    # Deprecated: kept for compatibility (views/tests). Use invoice_line_ids.
     invoice_id = fields.Many2one(
         store=True, comodel_name="account.move", compute="_compute_invoice_id",
     )
@@ -72,13 +71,13 @@ class Settlement(models.Model):
 
     def action_cancel(self):
         if any(x.state != "settled" for x in self):
-            raise exceptions.Warning(_("Cannot cancel an invoiced settlement."))
+            raise UserError(_("Cannot cancel an invoiced settlement."))
         self.write({"state": "cancel"})
 
     def unlink(self):
         """Allow to delete only cancelled settlements"""
         if any(x.state == "invoiced" for x in self):
-            raise exceptions.Warning(_("You can't delete invoiced settlements."))
+            raise UserError(_("You can't delete invoiced settlements."))
         return super().unlink()
 
     # facturar
@@ -87,51 +86,68 @@ class Settlement(models.Model):
             "type": "ir.actions.act_window",
             "name": _("Make invoice"),
             "res_model": "sale.commission.make.invoice",
-            "view_type": "form",
-            "target": "new",
             "view_mode": "form",
+            "target": "new",
             "context": {"settlement_ids": self.ids},
         }
 
     def _get_invoice_partner(self):
         return self[0].agent_id
 
-    def _prepare_invoice(self, journal, product, date=False):
-        move_form = Form(
-            self.env["account.move"].with_context(default_type="in_invoice")
-        )
-        if date:
-            move_form.invoice_date = date
+    def _prepare_invoice_line_vals(self, settlement, product):
+        """Build invoice line values for one settlement without UI Form."""
         partner = self._get_invoice_partner()
-        move_form.partner_id = partner
-        move_form.journal_id = journal
-        for settlement in self:
-            with move_form.invoice_line_ids.new() as line_form:
-                line_form.product_id = product
-                line_form.quantity = -1 if settlement.total < 0 else 1
-                line_form.price_unit = abs(settlement.total)
-                # Put period string
-                lang = self.env["res.lang"].search(
-                    [
-                        (
-                            "code",
-                            "=",
-                            partner.lang or self.env.context.get("lang", "en_US"),
-                        )
-                    ]
-                )
-                date_from = fields.Date.from_string(settlement.date_from)
-                date_to = fields.Date.from_string(settlement.date_to)
-                line_form.name += "\n" + _("Period: from %s to %s") % (
-                    date_from.strftime(lang.date_format),
-                    date_to.strftime(lang.date_format),
-                )
-                line_form.settlement_id = settlement
-                settlement._post_process_line(line_form)
-        vals = move_form._values_to_save(all_fields=True)
-        return vals
+        lang = self.env["res.lang"].search(
+            [("code", "=", partner.lang or self.env.context.get("lang", "en_US"))],
+            limit=1,
+        )
+        date_format = lang.date_format or "%m/%d/%Y"
+        date_from = fields.Date.from_string(settlement.date_from)
+        date_to = fields.Date.from_string(settlement.date_to)
+        name = product.display_name
+        if date_from and date_to:
+            name += "\n" + _("Period: from %s to %s") % (
+                date_from.strftime(date_format),
+                date_to.strftime(date_format),
+            )
+        account = (
+            product.property_account_expense_id
+            or product.categ_id.property_account_expense_categ_id
+        )
+        line_vals = {
+            "product_id": product.id,
+            "quantity": -1 if settlement.total < 0 else 1,
+            "price_unit": abs(settlement.total),
+            "product_uom_id": product.uom_po_id.id,
+            "name": name,
+            "settlement_id": settlement.id,
+            "tax_ids": [(6, 0, product.supplier_taxes_id.ids)],
+        }
+        if account:
+            line_vals["account_id"] = account.id
+        settlement._post_process_line(line_vals)
+        return line_vals
 
-    def _post_process_line(self, line_form):
+    def _prepare_invoice(self, journal, product, date=False):
+        partner = self._get_invoice_partner()
+        invoice_vals = {
+            "type": "in_invoice",
+            "partner_id": partner.id,
+            "journal_id": journal.id,
+            "company_id": journal.company_id.id,
+            "currency_id": (
+                journal.currency_id.id or journal.company_id.currency_id.id
+            ),
+            "invoice_line_ids": [],
+        }
+        if date:
+            invoice_vals["invoice_date"] = date
+        for settlement in self:
+            line_vals = self._prepare_invoice_line_vals(settlement, product)
+            invoice_vals["invoice_line_ids"].append((0, 0, line_vals))
+        return invoice_vals
+
+    def _post_process_line(self, line_vals):
         pass
 
     def _get_invoice_grouping_keys(self):
@@ -208,7 +224,10 @@ class SettlementLine(models.Model):
         comodel_name="sale.commission", related="agent_line.commission_id"
     )
     company_id = fields.Many2one(
-        comodel_name="res.company", related="settlement_id.company_id",
+        comodel_name="res.company",
+        related="settlement_id.company_id",
+        store=True,
+        readonly=True,
     )
 
     @api.constrains("settlement_id", "agent_line")
